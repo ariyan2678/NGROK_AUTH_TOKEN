@@ -15,13 +15,12 @@ jobs:
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
         Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "P@ssw0rd!" -Force)
 
-    - name: Download Localhost.run
-      run: Invoke-WebRequest -Uri https://bin.equinox.io/c/6u9ETMlXL0c/localhost.run -OutFile localhost.run
-      shell: pwsh
+    - name: Install OpenSSH Client
+      run: Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0
 
-    - name: Create TCP Tunnel
+    - name: Create TCP Tunnel using Serveo
       run: |
-        ./localhost.run --port 3389 > rdp_url.txt &
+        ssh -R 3389:localhost:3389 serveo.net > rdp_url.txt &
       shell: pwsh
 
     - name: Output RDP Connection Info
