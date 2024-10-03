@@ -10,17 +10,19 @@ jobs:
     steps:
     - name: Setup RDP
       run: |
-        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server'-name "fDenyTSConnections" -Value 0
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
         Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "P@ssw0rd!" -Force)
+
+    - name: Download Localhost.run
+      run: Invoke-WebRequest -Uri https://bin.equinox.io/c/6u9ETMlXL0c/localhost.run -OutFile localhost.run
+      shell: pwsh
 
     - name: Create TCP Tunnel
       run: |
-        curl -kLso - https://bin.equinox.io/c/6u9ETMlXL0c/localhost.run > localhost.run
-        chmod +x localhost.run
         ./localhost.run --port 3389 > rdp_url.txt &
-      shell: bash
+      shell: pwsh
 
     - name: Output RDP Connection Info
       run: Get-Content rdp_url.txt
