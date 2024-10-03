@@ -20,9 +20,10 @@ jobs:
 
     - name: Create TCP Tunnel using Serveo
       run: |
-        ssh -R 3389:localhost:3389 serveo.net > rdp_url.txt &
+        Start-Process -NoNewWindow -FilePath 'C:\Windows\System32\OpenSSH\ssh.exe' -ArgumentList '-R 3389:localhost:3389 serveo.net' -Wait
       shell: pwsh
 
-    - name: Output RDP Connection Info
-      run: Get-Content rdp_url.txt
+    - name: Output Serveo Tunnel Info
+      run: |
+        ssh -R 3389:localhost:3389 serveo.net
       shell: pwsh
