@@ -15,17 +15,18 @@ jobs:
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
         Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "P@ssw0rd!" -Force)
 
-    - name: Install OpenSSH Client
-      run: Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0
-
-    - name: Install tmate
+    - name: Install tmate for Windows
       run: |
-        curl -fsSL https://raw.githubusercontent.com/tmate-io/tmate/master/scripts/install.sh | sh
+        curl -L https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-msysgit-msys2-x86_64.tar.xz -o tmate.tar.xz
+        tar -xf tmate.tar.xz
+        Move-Item -Path tmate-2.4.0-static-msysgit-msys2-x86_64/tmate.exe -Destination C:/Windows/System32/tmate.exe
 
     - name: Start tmate session
-      run: tmate -S /tmp/tmate.sock new-session -d
-      shell: bash
+      run: |
+        tmate -S /tmp/tmate.sock new-session -d
+      shell: pwsh
 
     - name: Display tmate SSH connection info
-      run: tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}'
-      shell: bash
+      run: |
+        tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}'
+      shell: pwsh
