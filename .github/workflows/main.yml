@@ -1,4 +1,4 @@
-name: RDP Workflow
+name: RDP Workflow with tmate
 
 on: [push, workflow_dispatch]
 
@@ -18,12 +18,14 @@ jobs:
     - name: Install OpenSSH Client
       run: Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0
 
-    - name: Create TCP Tunnel using Serveo
+    - name: Install tmate
       run: |
-        Start-Process -NoNewWindow -FilePath 'C:\Windows\System32\OpenSSH\ssh.exe' -ArgumentList '-R 3389:localhost:3389 serveo.net' -Wait
-      shell: pwsh
+        curl -fsSL https://raw.githubusercontent.com/tmate-io/tmate/master/scripts/install.sh | sh
 
-    - name: Output Serveo Tunnel Info
-      run: |
-        ssh -R 3389:localhost:3389 serveo.net
-      shell: pwsh
+    - name: Start tmate session
+      run: tmate -S /tmp/tmate.sock new-session -d
+      shell: bash
+
+    - name: Display tmate SSH connection info
+      run: tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}'
+      shell: bash
