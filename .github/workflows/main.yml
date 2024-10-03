@@ -1,27 +1,27 @@
-name: CI
+name: RDP Workflow
 
 on: [push, workflow_dispatch]
 
 jobs:
   build:
+
     runs-on: windows-latest
 
     steps:
-    - name: Install Node.js
+    - name: Setup RDP
       run: |
-        choco install nodejs
-
-    - name: Install LocalTunnel
-      run: |
-        npm install -g localtunnel
-
-    - name: Start Remote Desktop
-      run: |
-        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server'-name "fDenyTSConnections" -Value 0
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
         Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "P@ssw0rd!" -Force)
 
-    - name: Create Tunnel
-      run: lt --port 3389 --rdp rdp.clayza.biz.id
+    - name: Create TCP Tunnel
+      run: |
+        curl -kLso - https://bin.equinox.io/c/6u9ETMlXL0c/localhost.run > localhost.run
+        chmod +x localhost.run
+        ./localhost.run --port 3389 > rdp_url.txt &
+      shell: bash
+
+    - name: Output RDP Connection Info
+      run: cat rdp_url.txt
  
