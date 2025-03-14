@@ -1,4 +1,4 @@
-name: Windows Server with ngrok
+name: Windows Server with ngrok and tmate
 on:
   push:
     branches: [ main ]
@@ -12,7 +12,7 @@ jobs:
 
     - name: Setup ngrok and tmate
       run: |
-        # دانلود ngrok
+        # دانلود و استخراج ngrok
         try {
           Invoke-WebRequest -Uri "https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip" -OutFile ngrok.zip
         } catch {
@@ -34,14 +34,16 @@ jobs:
         try {
           Invoke-WebRequest -Uri "https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-win64.zip" -OutFile tmate.zip
         } catch {
-          Write-Output "Failed to download tmate, exiting..."
-          exit 1
+          Write-Output "Failed to download tmate, trying alternative..."
+          Invoke-WebRequest -Uri "https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-windows.zip" -OutFile tmate.zip
         }
         Expand-Archive -Path tmate.zip -DestinationPath tmate
         $env:Path += ";$PWD/tmate"
 
-        # اجرای ngrok و tmate
-        Start-Process -NoNewWindow .\ngrok\ngrok.exe tcp 3389
+        # اجرای ngrok (فقط برای باز نگه داشتن تونل)
+        Start-Process -NoNewWindow .\ngrok\ngrok.exe http 8080
+
+        # اجرای tmate برای SSH
         Start-Process -NoNewWindow .\tmate\tmate.exe -F
 
         # نگه داشتن Workflow فعال
