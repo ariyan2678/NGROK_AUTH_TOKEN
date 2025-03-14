@@ -1,32 +1,35 @@
-name: RDP Workflow with tmate
-
-on: [push, workflow_dispatch]
-
+name: Windows Server with ngrok
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
 jobs:
   build:
-
     runs-on: windows-latest
-
     steps:
-    - name: Setup RDP
-      run: |
-        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server'-name "fDenyTSConnections" -Value 0
-        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
-        Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "P@ssw0rd!" -Force)
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-    - name: Install tmate for Windows
+    - name: Setup ngrok and tmate
       run: |
-        curl -L https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-msysgit-msys2-x86_64.tar.xz -o tmate.tar.xz
-        tar -xf tmate.tar.xz
-        Move-Item -Path tmate-2.4.0-static-msysgit-msys2-x86_64/tmate.exe -Destination C:/Windows/System32/tmate.exe
+        # دانلود ngrok
+        Invoke-WebRequest -Uri "https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-windows-amd64.zip" -OutFile ngrok.zip
+        Expand-Archive -Path ngrok.zip -DestinationPath ngrok
+        $env:Path += ";$PWD/ngrok"
 
-    - name: Start tmate session
-      run: |
-        tmate -S /tmp/tmate.sock new-session -d
-      shell: pwsh
+        # تنظیم Authtoken ngrok
+        $env:NGROK_AUTH_TOKEN = "${{ secrets.NGROK_AUTH_TOKEN }}"
+        .\ngrok\ngrok.exe authtoken $env:NGROK_AUTH_TOKEN
 
-    - name: Display tmate SSH connection info
-      run: |
-        tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}'
-      shell: pwsh
+        # دانلود و استخراج tmate
+        Invoke-WebRequest -Uri "https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-win64.zip" -OutFile tmate.zip
+        Expand-Archive -Path tmate.zip -DestinationPath tmate
+        $env:Path += ";$PWD/tmate"
+
+        # اجرای ngrok و tmate
+        Start-Process -NoNewWindow .\ngrok\ngrok.exe tcp 3389
+        Start-Process -NoNewWindow .\tmate\tmate.exe
+
+        # نگه داشتن Workflow فعال
+        while ($true) { Start-Sleep -Seconds 3600 }
+      shell: powershell
