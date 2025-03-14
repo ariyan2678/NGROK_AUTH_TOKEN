@@ -1,51 +1,31 @@
-name: Windows Server with ngrok and tmate
+name: Ubuntu Server with ngrok
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Setup ngrok and tmate
+    - name: Install ngrok and SSH
       run: |
-        # دانلود و استخراج ngrok
-        try {
-          Invoke-WebRequest -Uri "https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip" -OutFile ngrok.zip
-        } catch {
-          Write-Output "Failed to download ngrok, exiting..."
-          exit 1
-        }
-        Expand-Archive -Path ngrok.zip -DestinationPath ngrok
-        $env:Path += ";$PWD/ngrok"
+        # نصب openssh-server
+        sudo apt-get update
+        sudo apt-get install -y openssh-server
 
-        # تنظیم Authtoken ngrok
-        $env:NGROK_AUTH_TOKEN = "${{ secrets.NGROK_AUTH_TOKEN }}"
-        if (-not $env:NGROK_AUTH_TOKEN) {
-          Write-Output "NGROK_AUTH_TOKEN not found in secrets, exiting..."
-          exit 1
-        }
-        .\ngrok\ngrok.exe authtoken $env:NGROK_AUTH_TOKEN
+        # دانلود و نصب ngrok
+        wget https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.zip
+        unzip ngrok-v3-stable-linux-amd64.zip
+        chmod +x ngrok
+        ./ngrok authtoken ${{ secrets.NGROK_AUTH_TOKEN }}
 
-        # دانلود و استخراج tmate
-        try {
-          Invoke-WebRequest -Uri "https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-win64.zip" -OutFile tmate.zip
-        } catch {
-          Write-Output "Failed to download tmate, trying alternative..."
-          Invoke-WebRequest -Uri "https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-windows.zip" -OutFile tmate.zip
-        }
-        Expand-Archive -Path tmate.zip -DestinationPath tmate
-        $env:Path += ";$PWD/tmate"
+        # اجرای ngrok با تونل HTTP (برای تست)
+        ./ngrok http 80 &
 
-        # اجرای ngrok (فقط برای باز نگه داشتن تونل)
-        Start-Process -NoNewWindow .\ngrok\ngrok.exe http 8080
-
-        # اجرای tmate برای SSH
-        Start-Process -NoNewWindow .\tmate\tmate.exe -F
-
-        # نگه داشتن Workflow فعال
-        while ($true) { Start-Sleep -Seconds 3600 }
-      shell: powershell
+        # فعال‌سازی SSH و نگه داشتن سرور فعال
+        sudo service ssh start
+        sudo tail -f /dev/null
+      shell: bash
